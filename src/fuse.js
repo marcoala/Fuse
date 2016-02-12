@@ -244,6 +244,7 @@
           // Add it to the raw result list
           this.resultMap[index] = {
             item: entity,
+            matchMask: mainSearchResult.matchMask,
             scores: [finalScore]
           }
           this.results.push(this.resultMap[index])
@@ -499,6 +500,7 @@
     var locations
     var matches
     var isMatched
+    var textMask
 
     text = options.caseSensitive ? text : text.toLowerCase()
 
@@ -527,6 +529,8 @@
     // Set starting location at beginning text and initialize the alphabet.
     textLen = text.length
     // Highest score beyond which we give up.
+    textMask = Array(textLen).join('0')
+    // a mask of the matches
     threshold = options.threshold
     // Is there a nearby exact match? (speedup)
     bestLoc = text.indexOf(this.pattern, location)
@@ -574,6 +578,10 @@
       for (j = finish; j >= start; j--) {
         charMatch = this.patternAlphabet[text.charAt(j - 1)]
         // console.log('charMatch', charMatch, text.charAt(j - 1))
+        if (charMatch !== undefined) {
+          // put a 1 in the same position of the match in the mask
+          textMask = textMask.substring(0, j-1) + '1' + textMask.substring(j);
+        }
 
         if (i === 0) {
           // First pass: exact match.
@@ -604,7 +612,6 @@
           }
         }
       }
-
       // No hope for a (better) match at greater error levels.
       if (this._bitapScore(i + 1, location) > threshold) {
         break
@@ -614,6 +621,7 @@
 
     return {
       isMatch: bestLoc >= 0,
+      matchMask: textMask,
       score: score
     }
   }
